@@ -71,8 +71,13 @@ class ObraPublica {
   add_licitacion({ index_obra, empresa, cuit, descripcion, monto, tiempo, hash_presupuesto, estado }) {
     const unix_timestamp = Math.floor(Number(near.blockTimestamp())/1000)
     const sender = near.predecessorAccountId();
+    const arancel: bigint = near.attachedDeposit() as bigint;
+    assert(this.costo_participacion===arancel,"No transfirio el monto necesario para participar de la licitación")
     const _licitacion = new Licitacion({sender,unix_timestamp, empresa, cuit, descripcion, monto, tiempo, hash_presupuesto, estado})
     this.proyectos[index_obra].licitaciones.push(_licitacion)
+    const promise = near.promiseBatchCreate(this.titular)
+    near.promiseBatchActionTransfer(promise, arancel)
+    near.log(`${sender} ya estas participando de la licitación`);
   }
 
   @call({ payableFunction: true })
@@ -87,12 +92,13 @@ class ObraPublica {
   evaluar_licitacion({ index_obra, index_licitacion, valoracion, justificacion, estado }:{ index_obra:number, index_licitacion:number, valoracion:number, justificacion:string, estado:number }) {
     //VALIDAR QUE CUENTAS PUEDEN EVALUAR y NO PERMITIR QUE SE EVALUE MAS DE UNA VEZ
     const sender = near.predecessorAccountId();
+
     const owner = this.proyectos[index_obra].sender
     assert(sender===owner,"Solo puede modificarlo el titular del contrato")
+    assert(this.proyectos[index_obra].licitaciones[index_licitacion].estado<=1,"Ya no esta disponible para evaluacion")
     this.proyectos[index_obra].licitaciones[index_licitacion].valoracion=valoracion
     this.proyectos[index_obra].licitaciones[index_licitacion].justificacion=justificacion
     this.proyectos[index_obra].licitaciones[index_licitacion].estado=estado
-    //proyecto_select.evalua_licitacion(index_licitacion, valoracion, justificacion, estado)
   }
 
   @view({ })
@@ -105,7 +111,7 @@ class ObraPublica {
     const sender = near.predecessorAccountId();
     assert(sender===this.titular,"Solo puede modificarlo el titular de la dapp")
     near.log(`Se modifico el arancel a: ${arancel}`);
-    this.costo_participacion = BigInt(Number("2000000000000000000000")) //BigInt(arancel.toString())
+    this.costo_participacion = BigInt(arancel)
   }
 
   @view({ })

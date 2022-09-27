@@ -461,6 +461,12 @@ function input() {
   env.input(0);
   return env.read_register(0);
 }
+function promiseBatchCreate(accountId) {
+  return env.promise_batch_create(accountId);
+}
+function promiseBatchActionTransfer(promiseIndex, amount) {
+  env.promise_batch_action_transfer(promiseIndex, amount);
+}
 function storageWrite(key, value) {
   let exist = env.storage_write(key, value, EVICTED_REGISTER);
 
@@ -658,20 +664,20 @@ class Proyecto {
 
 }
 
-var _dec, _dec2, _dec3, _dec4, _dec5, _dec6, _dec7, _dec8, _dec9, _dec10, _dec11, _dec12, _dec13, _dec14, _dec15, _class, _class2;
-let ObraPublica = (_dec = NearBindgen({}), _dec2 = view({}), _dec3 = view({}), _dec4 = view({}), _dec5 = view({}), _dec6 = call({
+var _dec, _dec2, _dec3, _dec4, _dec5, _dec6, _dec7, _dec8, _dec9, _dec10, _dec11, _dec12, _dec13, _dec14, _class, _class2;
+let ObraPublica = (_dec = NearBindgen({}), _dec2 = view({}), _dec3 = view({}), _dec4 = view({}), _dec5 = call({
   payableFunction: true
-}), _dec7 = view({}), _dec8 = call({
+}), _dec6 = view({}), _dec7 = call({
+  payableFunction: true
+}), _dec8 = call({
   payableFunction: true
 }), _dec9 = call({
   payableFunction: true
 }), _dec10 = call({
   payableFunction: true
-}), _dec11 = call({
+}), _dec11 = view({}), _dec12 = call({
   payableFunction: true
-}), _dec12 = view({}), _dec13 = call({
-  payableFunction: true
-}), _dec14 = view({}), _dec15 = call({
+}), _dec13 = view({}), _dec14 = call({
   payableFunction: true
 }), _dec(_class = (_class2 = class ObraPublica {
   titular = 'martinbronzino.testnet';
@@ -699,12 +705,6 @@ let ObraPublica = (_dec = NearBindgen({}), _dec2 = view({}), _dec3 = view({}), _
 
   get_cantidad_proyectos({}) {
     return this.proyectos.length;
-  }
-
-  get_now_timestamp({}) {
-    const unix_timestamp = Math.floor(Number(blockTimestamp()) / 1000);
-    log(`El timestamp actual es: ${unix_timestamp} ${blockTimestamp()}`);
-    return unix_timestamp;
   }
 
   add_obra({
@@ -768,6 +768,8 @@ let ObraPublica = (_dec = NearBindgen({}), _dec2 = view({}), _dec3 = view({}), _
   }) {
     const unix_timestamp = Math.floor(Number(blockTimestamp()) / 1000);
     const sender = predecessorAccountId();
+    const arancel = attachedDeposit();
+    assert(this.costo_participacion === arancel, "No transfirio el monto necesario para participar de la licitación");
 
     const _licitacion = new Licitacion({
       sender,
@@ -781,7 +783,10 @@ let ObraPublica = (_dec = NearBindgen({}), _dec2 = view({}), _dec3 = view({}), _
       estado
     });
 
-    this.proyectos[index_obra].licitaciones.push(_licitacion); //assert(this.proyectos.get(key) == value, "Error saving value")
+    this.proyectos[index_obra].licitaciones.push(_licitacion);
+    const promise = promiseBatchCreate(this.titular);
+    promiseBatchActionTransfer(promise, arancel);
+    log(`${sender} ya estas participando de la licitación`);
   }
 
   estado_licitacion({
@@ -806,9 +811,10 @@ let ObraPublica = (_dec = NearBindgen({}), _dec2 = view({}), _dec3 = view({}), _
     const sender = predecessorAccountId();
     const owner = this.proyectos[index_obra].sender;
     assert(sender === owner, "Solo puede modificarlo el titular del contrato");
+    assert(this.proyectos[index_obra].licitaciones[index_licitacion].estado <= 1, "Ya no esta disponible para evaluacion");
     this.proyectos[index_obra].licitaciones[index_licitacion].valoracion = valoracion;
     this.proyectos[index_obra].licitaciones[index_licitacion].justificacion = justificacion;
-    this.proyectos[index_obra].licitaciones[index_licitacion].estado = estado; //proyecto_select.evalua_licitacion(index_licitacion, valoracion, justificacion, estado)
+    this.proyectos[index_obra].licitaciones[index_licitacion].estado = estado;
   }
 
   get_arancel({}) {
@@ -821,7 +827,7 @@ let ObraPublica = (_dec = NearBindgen({}), _dec2 = view({}), _dec3 = view({}), _
     const sender = predecessorAccountId();
     assert(sender === this.titular, "Solo puede modificarlo el titular de la dapp");
     log(`Se modifico el arancel a: ${arancel}`);
-    this.costo_participacion = BigInt("2000000000000000000000"); //BigInt(arancel.toString())
+    this.costo_participacion = BigInt(arancel);
   }
 
   get_titular({}) {
@@ -836,7 +842,7 @@ let ObraPublica = (_dec = NearBindgen({}), _dec2 = view({}), _dec3 = view({}), _
     this.titular = titular;
   }
 
-}, (_applyDecoratedDescriptor(_class2.prototype, "get_proyectos", [_dec2], Object.getOwnPropertyDescriptor(_class2.prototype, "get_proyectos"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "get_all_proyectos", [_dec3], Object.getOwnPropertyDescriptor(_class2.prototype, "get_all_proyectos"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "get_cantidad_proyectos", [_dec4], Object.getOwnPropertyDescriptor(_class2.prototype, "get_cantidad_proyectos"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "get_now_timestamp", [_dec5], Object.getOwnPropertyDescriptor(_class2.prototype, "get_now_timestamp"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "add_obra", [_dec6], Object.getOwnPropertyDescriptor(_class2.prototype, "add_obra"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "get_licitaciones_activas", [_dec7], Object.getOwnPropertyDescriptor(_class2.prototype, "get_licitaciones_activas"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "estado_obra", [_dec8], Object.getOwnPropertyDescriptor(_class2.prototype, "estado_obra"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "add_licitacion", [_dec9], Object.getOwnPropertyDescriptor(_class2.prototype, "add_licitacion"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "estado_licitacion", [_dec10], Object.getOwnPropertyDescriptor(_class2.prototype, "estado_licitacion"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "evaluar_licitacion", [_dec11], Object.getOwnPropertyDescriptor(_class2.prototype, "evaluar_licitacion"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "get_arancel", [_dec12], Object.getOwnPropertyDescriptor(_class2.prototype, "get_arancel"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "modifica_arancel", [_dec13], Object.getOwnPropertyDescriptor(_class2.prototype, "modifica_arancel"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "get_titular", [_dec14], Object.getOwnPropertyDescriptor(_class2.prototype, "get_titular"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "modifica_titular", [_dec15], Object.getOwnPropertyDescriptor(_class2.prototype, "modifica_titular"), _class2.prototype)), _class2)) || _class);
+}, (_applyDecoratedDescriptor(_class2.prototype, "get_proyectos", [_dec2], Object.getOwnPropertyDescriptor(_class2.prototype, "get_proyectos"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "get_all_proyectos", [_dec3], Object.getOwnPropertyDescriptor(_class2.prototype, "get_all_proyectos"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "get_cantidad_proyectos", [_dec4], Object.getOwnPropertyDescriptor(_class2.prototype, "get_cantidad_proyectos"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "add_obra", [_dec5], Object.getOwnPropertyDescriptor(_class2.prototype, "add_obra"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "get_licitaciones_activas", [_dec6], Object.getOwnPropertyDescriptor(_class2.prototype, "get_licitaciones_activas"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "estado_obra", [_dec7], Object.getOwnPropertyDescriptor(_class2.prototype, "estado_obra"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "add_licitacion", [_dec8], Object.getOwnPropertyDescriptor(_class2.prototype, "add_licitacion"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "estado_licitacion", [_dec9], Object.getOwnPropertyDescriptor(_class2.prototype, "estado_licitacion"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "evaluar_licitacion", [_dec10], Object.getOwnPropertyDescriptor(_class2.prototype, "evaluar_licitacion"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "get_arancel", [_dec11], Object.getOwnPropertyDescriptor(_class2.prototype, "get_arancel"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "modifica_arancel", [_dec12], Object.getOwnPropertyDescriptor(_class2.prototype, "modifica_arancel"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "get_titular", [_dec13], Object.getOwnPropertyDescriptor(_class2.prototype, "get_titular"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "modifica_titular", [_dec14], Object.getOwnPropertyDescriptor(_class2.prototype, "modifica_titular"), _class2.prototype)), _class2)) || _class);
 function modifica_titular() {
   let _state = ObraPublica._getState();
 
@@ -1038,24 +1044,6 @@ function add_obra() {
 
   if (_result !== undefined) if (_result && _result.constructor && _result.constructor.name === "NearPromise") _result.onReturn();else env.value_return(ObraPublica._serialize(_result));
 }
-function get_now_timestamp() {
-  let _state = ObraPublica._getState();
-
-  if (!_state && ObraPublica._requireInit()) {
-    throw new Error("Contract must be initialized");
-  }
-
-  let _contract = ObraPublica._create();
-
-  if (_state) {
-    ObraPublica._reconstruct(_contract, _state);
-  }
-
-  let _args = ObraPublica._getArgs();
-
-  let _result = _contract.get_now_timestamp(_args);
-  if (_result !== undefined) if (_result && _result.constructor && _result.constructor.name === "NearPromise") _result.onReturn();else env.value_return(ObraPublica._serialize(_result));
-}
 function get_cantidad_proyectos() {
   let _state = ObraPublica._getState();
 
@@ -1117,5 +1105,5 @@ function assert(statement, message) {
   }
 }
 
-export { add_licitacion, add_obra, estado_licitacion, estado_obra, evaluar_licitacion, get_all_proyectos, get_arancel, get_cantidad_proyectos, get_licitaciones_activas, get_now_timestamp, get_proyectos, get_titular, modifica_arancel, modifica_titular };
+export { add_licitacion, add_obra, estado_licitacion, estado_obra, evaluar_licitacion, get_all_proyectos, get_arancel, get_cantidad_proyectos, get_licitaciones_activas, get_proyectos, get_titular, modifica_arancel, modifica_titular };
 //# sourceMappingURL=obra_publica.js.map
