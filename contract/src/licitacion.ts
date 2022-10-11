@@ -3,6 +3,7 @@ export const estados = ["PRESENTADO", "EVALUACION", "GANADOR", "DESCARTADO"]
 export class Licitacion {
   sender: string;
   unix_timestamp: number;
+  pos:number;
   empresa: string;
   cuit: number;
   descripcion: string;
@@ -14,9 +15,10 @@ export class Licitacion {
   hash_presupuesto: string;
   estado: number
 
-  constructor({ sender, unix_timestamp, empresa, cuit, descripcion, monto, tiempo, hash_presupuesto, estado }: {
+  constructor({ sender, unix_timestamp,pos, empresa, cuit, descripcion, monto, tiempo, hash_presupuesto, estado }: {
     sender: string;
     unix_timestamp: number;
+    pos:number;
     empresa: string;
     cuit: number;
     descripcion: string;
@@ -27,6 +29,7 @@ export class Licitacion {
   }) {
     this.sender = sender;
     this.unix_timestamp = unix_timestamp;
+    this.pos=pos;
     this.empresa = empresa;
     this.cuit = cuit;
     this.descripcion = descripcion;
@@ -35,6 +38,11 @@ export class Licitacion {
     this.hash_presupuesto = hash_presupuesto;
     this.estado = estado;
   }
+
+  get_estado() {
+    return this.estado
+  }
+
   cambia_estado(estado) {
     this.estado = estado
   }

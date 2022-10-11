@@ -555,6 +555,7 @@ class Licitacion {
   constructor({
     sender,
     unix_timestamp,
+    pos,
     empresa,
     cuit,
     descripcion,
@@ -565,6 +566,7 @@ class Licitacion {
   }) {
     this.sender = sender;
     this.unix_timestamp = unix_timestamp;
+    this.pos = pos;
     this.empresa = empresa;
     this.cuit = cuit;
     this.descripcion = descripcion;
@@ -572,6 +574,10 @@ class Licitacion {
     this.tiempo = tiempo;
     this.hash_presupuesto = hash_presupuesto;
     this.estado = estado;
+  }
+
+  get_estado() {
+    return this.estado;
   }
 
   cambia_estado(estado) {
@@ -593,6 +599,7 @@ class Proyecto {
   constructor({
     sender,
     unix_timestamp,
+    pos,
     nombre,
     ubicacion,
     descripcion,
@@ -603,6 +610,7 @@ class Proyecto {
   }) {
     this.sender = sender;
     this.unix_timestamp = unix_timestamp;
+    this.pos = pos;
     this.nombre = nombre;
     this.ubicacion = ubicacion;
     this.descripcion = descripcion;
@@ -610,12 +618,14 @@ class Proyecto {
     this.fecha_limite_licitacion = fecha_limite_licitacion;
     this.hash_pliego = hash_pliego;
     this.estado = estado;
+    this.licitaciones = [];
   }
 
   getter() {
     return {
       sender: this.sender,
       fecha: this.unix_timestamp,
+      pos: this.pos,
       nombre: this.nombre,
       ubicacion: this.ubicacion,
       descripcion: this.descripcion,
@@ -638,11 +648,15 @@ class Proyecto {
     return this.estado == 1 ? true : false;
   }
 
-  agrega_licitacion(sender, empresa, cuit, descripcion, monto, tiempo, hash_presupuesto, estado) {
-    const unix_timestamp = Math.floor(Date.now() / 1000);
+  get_licitacion(index_licitacion) {
+    return this.licitaciones[index_licitacion];
+  }
+
+  agrega_licitacion(sender, unix_timestamp, pos, empresa, cuit, descripcion, monto, tiempo, hash_presupuesto, estado) {
     const licitacion = new Licitacion({
       sender,
       unix_timestamp,
+      pos,
       empresa,
       cuit,
       descripcion,
@@ -664,25 +678,44 @@ class Proyecto {
 
 }
 
-var _dec, _dec2, _dec3, _dec4, _dec5, _dec6, _dec7, _dec8, _dec9, _dec10, _dec11, _dec12, _dec13, _dec14, _class, _class2;
-let ObraPublica = (_dec = NearBindgen({}), _dec2 = view({}), _dec3 = view({}), _dec4 = view({}), _dec5 = call({
-  payableFunction: true
-}), _dec6 = view({}), _dec7 = call({
+class LicitacionCuenta {
+  constructor({
+    unix_timestamp,
+    index_obra,
+    index_licitacion
+  }) {
+    this.unix_timestamp = unix_timestamp;
+    this.index_obra = index_obra;
+    this.index_licitacion = index_licitacion;
+  }
+
+}
+
+var _dec, _dec2, _dec3, _dec4, _dec5, _dec6, _dec7, _dec8, _dec9, _dec10, _dec11, _dec12, _dec13, _dec14, _dec15, _dec16, _dec17, _dec18, _dec19, _class, _class2;
+let ObraPublica = (_dec = NearBindgen({}), _dec2 = view({}), _dec3 = view({}), _dec4 = view({}), _dec5 = view({}), _dec6 = view({}), _dec7 = call({
   payableFunction: true
 }), _dec8 = call({
   payableFunction: true
-}), _dec9 = call({
+}), _dec9 = view({}), _dec10 = call({
   payableFunction: true
-}), _dec10 = call({
+}), _dec11 = call({
   payableFunction: true
-}), _dec11 = view({}), _dec12 = call({
+}), _dec12 = view({}), _dec13 = view({}), _dec14 = call({
   payableFunction: true
-}), _dec13 = view({}), _dec14 = call({
+}), _dec15 = call({
+  payableFunction: true
+}), _dec16 = view({}), _dec17 = call({
+  payableFunction: true
+}), _dec18 = view({}), _dec19 = call({
   payableFunction: true
 }), _dec(_class = (_class2 = class ObraPublica {
-  titular = 'martinbronzino.testnet';
-  costo_participacion = BigInt("2000000000000000000000");
-  proyectos = [];
+  constructor() {
+    this.titular = 'martinbronzino.testnet';
+    this.costo_participacion = "2000000000000000000000";
+    this.proyectos = [];
+    this.proyectos_new = {};
+    this.licitaciones_cuentas = {};
+  }
 
   get_proyectos({
     from = 0,
@@ -703,6 +736,19 @@ let ObraPublica = (_dec = NearBindgen({}), _dec2 = view({}), _dec3 = view({}), _
     return this.proyectos;
   }
 
+  get_all_proyectos_new({}) {
+    return this.proyectos_new;
+  }
+
+  get_proyecto({
+    unix_timestamp
+  }) {
+    const p = this.proyectos.find(p => p.unix_timestamp === unix_timestamp); //const p:Proyecto = new Proyecto(this.proyectos.find(p=>p.unix_timestamp===unix_timestamp))
+    //near.log(p.checkActiva())
+
+    return p;
+  }
+
   get_cantidad_proyectos({}) {
     return this.proyectos.length;
   }
@@ -716,11 +762,13 @@ let ObraPublica = (_dec = NearBindgen({}), _dec2 = view({}), _dec3 = view({}), _
     hash_pliego,
     estado
   }) {
-    const unix_timestamp = Math.floor(Number(blockTimestamp()) / 1000);
+    const unix_timestamp = Math.floor(Number(blockTimestamp()) / 1000000000);
     const sender = predecessorAccountId();
+    const pos = this.proyectos.length;
     const proyecto = new Proyecto({
       sender,
       unix_timestamp,
+      pos,
       nombre,
       ubicacion,
       descripcion,
@@ -729,16 +777,23 @@ let ObraPublica = (_dec = NearBindgen({}), _dec2 = view({}), _dec3 = view({}), _
       hash_pliego,
       estado
     });
+    this.proyectos_new[unix_timestamp] = proyecto;
     this.proyectos.push(proyecto);
     log(`Se agrego una obra nueva: ${nombre} con el key:${unix_timestamp}`);
   }
 
+  limpia_proyectos({}) {
+    this.proyectos = [];
+    this.proyectos_new = {};
+    this.licitaciones_cuentas = {};
+  }
+
   get_licitaciones_activas({}) {
-    const now_unix = Math.floor(Number(blockTimestamp()) / 1000);
+    const now_unix = Math.floor(Number(blockTimestamp()) / 1000000000);
     let proyectos = [];
 
     for (let p of this.proyectos) {
-      if (p.apertura_licitacion >= now_unix && p.fecha_limite_licitacion <= now_unix) {
+      if (p.apertura_licitacion <= now_unix && p.fecha_limite_licitacion >= now_unix) {
         proyectos.push(p);
       }
     }
@@ -752,7 +807,9 @@ let ObraPublica = (_dec = NearBindgen({}), _dec2 = view({}), _dec3 = view({}), _
   }) {
     const sender = predecessorAccountId();
     const owner = this.proyectos[index].sender;
-    assert(sender === owner, "Solo puede modificarlo el titular del contrato");
+    assert(sender === owner, "Solo puede modificarlo el titular del contrato"); //const p:Proyecto = this.proyectos[index]
+    //p.cambia_estado(estado)
+
     this.proyectos[index].estado = estado;
   }
 
@@ -766,14 +823,18 @@ let ObraPublica = (_dec = NearBindgen({}), _dec2 = view({}), _dec3 = view({}), _
     hash_presupuesto,
     estado
   }) {
-    const unix_timestamp = Math.floor(Number(blockTimestamp()) / 1000);
+    const unix_timestamp = Math.floor(Number(blockTimestamp()) / 1000000000);
     const sender = predecessorAccountId();
     const arancel = attachedDeposit();
-    assert(this.costo_participacion === arancel, "No transfirio el monto necesario para participar de la licitación");
+    assert(BigInt(this.costo_participacion) === arancel, "No transfirio el monto necesario para participar de la licitación");
+    const p = this.proyectos[index_obra];
+    const index_licitacion = p.licitaciones.length; //const p:Proyecto = this.proyectos[index_obra]
+    //p.agrega_licitacion(sender,unix_timestamp, empresa, cuit, descripcion, monto, tiempo, hash_presupuesto, estado)
 
-    const _licitacion = new Licitacion({
+    const licitacion = new Licitacion({
       sender,
       unix_timestamp,
+      pos: index_licitacion,
       empresa,
       cuit,
       descripcion,
@@ -782,11 +843,45 @@ let ObraPublica = (_dec = NearBindgen({}), _dec2 = view({}), _dec3 = view({}), _
       hash_presupuesto,
       estado
     });
+    p.licitaciones.push(licitacion);
+    this.proyectos_new[p.unix_timestamp].licitaciones.push(licitacion); // const index_licitacion=this.proyectos[index_obra].licitaciones.length-1
 
-    this.proyectos[index_obra].licitaciones.push(_licitacion);
+    const licitacion_cuenta = new LicitacionCuenta({
+      unix_timestamp,
+      index_obra,
+      index_licitacion
+    });
+
+    if (!this.licitaciones_cuentas.hasOwnProperty(sender)) {
+      this.licitaciones_cuentas[sender] = [];
+    }
+
+    this.licitaciones_cuentas[sender].push(licitacion_cuenta);
     const promise = promiseBatchCreate(this.titular);
     promiseBatchActionTransfer(promise, arancel);
     log(`${sender} ya estas participando de la licitación`);
+  }
+
+  get_mis_licitaciones() {
+    const sender = predecessorAccountId();
+    let licitaciones = [];
+
+    if (this.licitaciones_cuentas.hasOwnProperty(sender)) {
+      for (let l of this.licitaciones_cuentas[sender]) {
+        let proyecto = Object.assign({}, this.proyectos[l.index_obra]);
+        const mi_licitacion = proyecto.licitaciones[l.index_licitacion];
+        proyecto.licitaciones = [mi_licitacion];
+        licitaciones.push(proyecto);
+      }
+    }
+
+    return licitaciones;
+  }
+
+  get_licitacion(index_obra, index_licitacion) {
+    const p = this.proyectos_new[index_obra];
+    const licitacion = p.licitaciones[index_licitacion];
+    return licitacion;
   }
 
   estado_licitacion({
@@ -797,7 +892,11 @@ let ObraPublica = (_dec = NearBindgen({}), _dec2 = view({}), _dec3 = view({}), _
     const sender = predecessorAccountId();
     const owner = this.proyectos[index_obra].sender;
     assert(sender === owner, "Solo puede modificarlo el titular del contrato");
-    this.proyectos[index_obra].licitaciones[index_licitacion].estado = estado;
+    const p = this.proyectos[index_obra];
+    const l = p.licitaciones[index_licitacion]; //p.get_licitacion(index_licitacion)
+    //l.cambia_estado(estado)
+
+    l.estado = estado;
   }
 
   evaluar_licitacion({
@@ -810,24 +909,28 @@ let ObraPublica = (_dec = NearBindgen({}), _dec2 = view({}), _dec3 = view({}), _
     //VALIDAR QUE CUENTAS PUEDEN EVALUAR y NO PERMITIR QUE SE EVALUE MAS DE UNA VEZ
     const sender = predecessorAccountId();
     const owner = this.proyectos[index_obra].sender;
+    const p = this.proyectos[index_obra];
+    const l = p.licitaciones[index_licitacion]; //p.get_licitacion(index_licitacion)
+
     assert(sender === owner, "Solo puede modificarlo el titular del contrato");
-    assert(this.proyectos[index_obra].licitaciones[index_licitacion].estado <= 1, "Ya no esta disponible para evaluacion");
-    this.proyectos[index_obra].licitaciones[index_licitacion].valoracion = valoracion;
-    this.proyectos[index_obra].licitaciones[index_licitacion].justificacion = justificacion;
-    this.proyectos[index_obra].licitaciones[index_licitacion].estado = estado;
+    assert(l.estado <= 1, "Ya no esta disponible para evaluacion");
+    l.valoracion = valoracion;
+    l.justificacion = justificacion;
+    l.estado = estado; //assert(l.estado<=1,"Ya no esta disponible para evaluacion")
+    //l.evalua(valoracion,justificacion,estado)
   }
 
   get_arancel({}) {
-    return this.costo_participacion.toString();
+    return this.costo_participacion;
   }
 
   modifica_arancel({
     arancel
   }) {
     const sender = predecessorAccountId();
-    assert(sender === this.titular, "Solo puede modificarlo el titular de la dapp");
-    log(`Se modifico el arancel a: ${arancel}`);
-    this.costo_participacion = BigInt(arancel);
+    assert(sender === this.titular, "Solo puede modificarlo el titular de la dapp"); //near.log(`Se modifico el arancel a: ${arancel}`);
+
+    this.costo_participacion = arancel;
   }
 
   get_titular({}) {
@@ -842,7 +945,7 @@ let ObraPublica = (_dec = NearBindgen({}), _dec2 = view({}), _dec3 = view({}), _
     this.titular = titular;
   }
 
-}, (_applyDecoratedDescriptor(_class2.prototype, "get_proyectos", [_dec2], Object.getOwnPropertyDescriptor(_class2.prototype, "get_proyectos"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "get_all_proyectos", [_dec3], Object.getOwnPropertyDescriptor(_class2.prototype, "get_all_proyectos"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "get_cantidad_proyectos", [_dec4], Object.getOwnPropertyDescriptor(_class2.prototype, "get_cantidad_proyectos"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "add_obra", [_dec5], Object.getOwnPropertyDescriptor(_class2.prototype, "add_obra"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "get_licitaciones_activas", [_dec6], Object.getOwnPropertyDescriptor(_class2.prototype, "get_licitaciones_activas"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "estado_obra", [_dec7], Object.getOwnPropertyDescriptor(_class2.prototype, "estado_obra"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "add_licitacion", [_dec8], Object.getOwnPropertyDescriptor(_class2.prototype, "add_licitacion"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "estado_licitacion", [_dec9], Object.getOwnPropertyDescriptor(_class2.prototype, "estado_licitacion"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "evaluar_licitacion", [_dec10], Object.getOwnPropertyDescriptor(_class2.prototype, "evaluar_licitacion"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "get_arancel", [_dec11], Object.getOwnPropertyDescriptor(_class2.prototype, "get_arancel"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "modifica_arancel", [_dec12], Object.getOwnPropertyDescriptor(_class2.prototype, "modifica_arancel"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "get_titular", [_dec13], Object.getOwnPropertyDescriptor(_class2.prototype, "get_titular"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "modifica_titular", [_dec14], Object.getOwnPropertyDescriptor(_class2.prototype, "modifica_titular"), _class2.prototype)), _class2)) || _class);
+}, (_applyDecoratedDescriptor(_class2.prototype, "get_proyectos", [_dec2], Object.getOwnPropertyDescriptor(_class2.prototype, "get_proyectos"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "get_all_proyectos", [_dec3], Object.getOwnPropertyDescriptor(_class2.prototype, "get_all_proyectos"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "get_all_proyectos_new", [_dec4], Object.getOwnPropertyDescriptor(_class2.prototype, "get_all_proyectos_new"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "get_proyecto", [_dec5], Object.getOwnPropertyDescriptor(_class2.prototype, "get_proyecto"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "get_cantidad_proyectos", [_dec6], Object.getOwnPropertyDescriptor(_class2.prototype, "get_cantidad_proyectos"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "add_obra", [_dec7], Object.getOwnPropertyDescriptor(_class2.prototype, "add_obra"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "limpia_proyectos", [_dec8], Object.getOwnPropertyDescriptor(_class2.prototype, "limpia_proyectos"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "get_licitaciones_activas", [_dec9], Object.getOwnPropertyDescriptor(_class2.prototype, "get_licitaciones_activas"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "estado_obra", [_dec10], Object.getOwnPropertyDescriptor(_class2.prototype, "estado_obra"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "add_licitacion", [_dec11], Object.getOwnPropertyDescriptor(_class2.prototype, "add_licitacion"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "get_mis_licitaciones", [_dec12], Object.getOwnPropertyDescriptor(_class2.prototype, "get_mis_licitaciones"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "get_licitacion", [_dec13], Object.getOwnPropertyDescriptor(_class2.prototype, "get_licitacion"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "estado_licitacion", [_dec14], Object.getOwnPropertyDescriptor(_class2.prototype, "estado_licitacion"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "evaluar_licitacion", [_dec15], Object.getOwnPropertyDescriptor(_class2.prototype, "evaluar_licitacion"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "get_arancel", [_dec16], Object.getOwnPropertyDescriptor(_class2.prototype, "get_arancel"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "modifica_arancel", [_dec17], Object.getOwnPropertyDescriptor(_class2.prototype, "modifica_arancel"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "get_titular", [_dec18], Object.getOwnPropertyDescriptor(_class2.prototype, "get_titular"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "modifica_titular", [_dec19], Object.getOwnPropertyDescriptor(_class2.prototype, "modifica_titular"), _class2.prototype)), _class2)) || _class);
 function modifica_titular() {
   let _state = ObraPublica._getState();
 
@@ -963,6 +1066,42 @@ function estado_licitacion() {
 
   if (_result !== undefined) if (_result && _result.constructor && _result.constructor.name === "NearPromise") _result.onReturn();else env.value_return(ObraPublica._serialize(_result));
 }
+function get_licitacion() {
+  let _state = ObraPublica._getState();
+
+  if (!_state && ObraPublica._requireInit()) {
+    throw new Error("Contract must be initialized");
+  }
+
+  let _contract = ObraPublica._create();
+
+  if (_state) {
+    ObraPublica._reconstruct(_contract, _state);
+  }
+
+  let _args = ObraPublica._getArgs();
+
+  let _result = _contract.get_licitacion(_args);
+  if (_result !== undefined) if (_result && _result.constructor && _result.constructor.name === "NearPromise") _result.onReturn();else env.value_return(ObraPublica._serialize(_result));
+}
+function get_mis_licitaciones() {
+  let _state = ObraPublica._getState();
+
+  if (!_state && ObraPublica._requireInit()) {
+    throw new Error("Contract must be initialized");
+  }
+
+  let _contract = ObraPublica._create();
+
+  if (_state) {
+    ObraPublica._reconstruct(_contract, _state);
+  }
+
+  let _args = ObraPublica._getArgs();
+
+  let _result = _contract.get_mis_licitaciones(_args);
+  if (_result !== undefined) if (_result && _result.constructor && _result.constructor.name === "NearPromise") _result.onReturn();else env.value_return(ObraPublica._serialize(_result));
+}
 function add_licitacion() {
   let _state = ObraPublica._getState();
 
@@ -1023,6 +1162,27 @@ function get_licitaciones_activas() {
   let _result = _contract.get_licitaciones_activas(_args);
   if (_result !== undefined) if (_result && _result.constructor && _result.constructor.name === "NearPromise") _result.onReturn();else env.value_return(ObraPublica._serialize(_result));
 }
+function limpia_proyectos() {
+  let _state = ObraPublica._getState();
+
+  if (!_state && ObraPublica._requireInit()) {
+    throw new Error("Contract must be initialized");
+  }
+
+  let _contract = ObraPublica._create();
+
+  if (_state) {
+    ObraPublica._reconstruct(_contract, _state);
+  }
+
+  let _args = ObraPublica._getArgs();
+
+  let _result = _contract.limpia_proyectos(_args);
+
+  ObraPublica._saveToStorage(_contract);
+
+  if (_result !== undefined) if (_result && _result.constructor && _result.constructor.name === "NearPromise") _result.onReturn();else env.value_return(ObraPublica._serialize(_result));
+}
 function add_obra() {
   let _state = ObraPublica._getState();
 
@@ -1060,6 +1220,42 @@ function get_cantidad_proyectos() {
   let _args = ObraPublica._getArgs();
 
   let _result = _contract.get_cantidad_proyectos(_args);
+  if (_result !== undefined) if (_result && _result.constructor && _result.constructor.name === "NearPromise") _result.onReturn();else env.value_return(ObraPublica._serialize(_result));
+}
+function get_proyecto() {
+  let _state = ObraPublica._getState();
+
+  if (!_state && ObraPublica._requireInit()) {
+    throw new Error("Contract must be initialized");
+  }
+
+  let _contract = ObraPublica._create();
+
+  if (_state) {
+    ObraPublica._reconstruct(_contract, _state);
+  }
+
+  let _args = ObraPublica._getArgs();
+
+  let _result = _contract.get_proyecto(_args);
+  if (_result !== undefined) if (_result && _result.constructor && _result.constructor.name === "NearPromise") _result.onReturn();else env.value_return(ObraPublica._serialize(_result));
+}
+function get_all_proyectos_new() {
+  let _state = ObraPublica._getState();
+
+  if (!_state && ObraPublica._requireInit()) {
+    throw new Error("Contract must be initialized");
+  }
+
+  let _contract = ObraPublica._create();
+
+  if (_state) {
+    ObraPublica._reconstruct(_contract, _state);
+  }
+
+  let _args = ObraPublica._getArgs();
+
+  let _result = _contract.get_all_proyectos_new(_args);
   if (_result !== undefined) if (_result && _result.constructor && _result.constructor.name === "NearPromise") _result.onReturn();else env.value_return(ObraPublica._serialize(_result));
 }
 function get_all_proyectos() {
@@ -1105,5 +1301,5 @@ function assert(statement, message) {
   }
 }
 
-export { add_licitacion, add_obra, estado_licitacion, estado_obra, evaluar_licitacion, get_all_proyectos, get_arancel, get_cantidad_proyectos, get_licitaciones_activas, get_proyectos, get_titular, modifica_arancel, modifica_titular };
+export { add_licitacion, add_obra, estado_licitacion, estado_obra, evaluar_licitacion, get_all_proyectos, get_all_proyectos_new, get_arancel, get_cantidad_proyectos, get_licitacion, get_licitaciones_activas, get_mis_licitaciones, get_proyecto, get_proyectos, get_titular, limpia_proyectos, modifica_arancel, modifica_titular };
 //# sourceMappingURL=obra_publica.js.map

@@ -4,6 +4,7 @@ import { Licitacion } from './licitacion'
 export class Proyecto {
   sender: string;
   unix_timestamp: number;
+  pos: number;
   nombre: string;
   ubicacion: string;
   descripcion: string;
@@ -13,9 +14,10 @@ export class Proyecto {
   licitaciones: Licitacion[];
   estado: number
 
-  constructor({ sender, unix_timestamp, nombre, ubicacion, descripcion, apertura_licitacion, fecha_limite_licitacion, hash_pliego, estado }: {
+  constructor({ sender, unix_timestamp,pos, nombre, ubicacion, descripcion, apertura_licitacion, fecha_limite_licitacion, hash_pliego, estado }: {
     sender: string;
     unix_timestamp: number;
+    pos: number;
     nombre: string;
     ubicacion: string;
     descripcion: string;
@@ -26,6 +28,7 @@ export class Proyecto {
   }) {
     this.sender = sender;
     this.unix_timestamp = unix_timestamp;
+    this.pos = pos;
     this.nombre = nombre;
     this.ubicacion = ubicacion;
     this.descripcion = descripcion;
@@ -33,12 +36,14 @@ export class Proyecto {
     this.fecha_limite_licitacion = fecha_limite_licitacion;
     this.hash_pliego = hash_pliego;
     this.estado = estado;
+    this.licitaciones=[]
   }
 
   getter(){
     return {
       sender:this.sender,
       fecha:this.unix_timestamp,
+      pos:this.pos,
       nombre:this.nombre,
       ubicacion: this.ubicacion,
       descripcion:this.descripcion,
@@ -61,9 +66,12 @@ export class Proyecto {
     return this.estado == 1 ? true : false; 
   }
 
-  agrega_licitacion(sender, empresa, cuit, descripcion, monto, tiempo, hash_presupuesto, estado) {
-    const unix_timestamp = Math.floor(Date.now() / 1000)
-    const licitacion = new Licitacion({ sender, unix_timestamp, empresa, cuit, descripcion, monto, tiempo, hash_presupuesto, estado });
+  get_licitacion(index_licitacion){
+    return this.licitaciones[index_licitacion]
+  }
+
+  agrega_licitacion(sender,unix_timestamp, pos,empresa, cuit, descripcion, monto, tiempo, hash_presupuesto, estado) {
+    const licitacion = new Licitacion({ sender, unix_timestamp, pos,empresa, cuit, descripcion, monto, tiempo, hash_presupuesto, estado });
     this.licitaciones.push(licitacion);
   }
 
